@@ -35,9 +35,11 @@ def main():
     assert any(n['title']=='Sổ Gia Hạn · Thông báo thử' and '18:00' in n['body'] for n in notices),notices
     page.evaluate("""async()=>{let reg=await navigator.serviceWorker.ready;for(let n of await reg.getNotifications())n.close()}""")
     cdp=page.context.new_cdp_session(page)
-    cdp.send('Browser.setPermission',{'permission':{'name':'notifications'},'setting':'denied','origin':f'http://127.0.0.1:{server.server_port}'})
+    context_id=cdp.send('Target.getTargetInfo')['targetInfo']['browserContextId']
+    cdp.send('Browser.setPermission',{'permission':{'name':'notifications'},'setting':'denied','browserContextId':context_id,'origin':f'http://127.0.0.1:{server.server_port}'})
+    assert page.evaluate('Notification.permission')=='denied'
     page.locator('#notify').click();expect(page.locator('#toast')).to_contain_text('Thông báo đang bị chặn')
-    cdp.send('Browser.setPermission',{'permission':{'name':'notifications'},'setting':'granted','origin':f'http://127.0.0.1:{server.server_port}'})
+    cdp.send('Browser.setPermission',{'permission':{'name':'notifications'},'setting':'granted','browserContextId':context_id,'origin':f'http://127.0.0.1:{server.server_port}'})
     cdp.detach()
     page.locator('#add').click()
     form=page.locator('#form')
