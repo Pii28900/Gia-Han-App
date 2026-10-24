@@ -12,9 +12,16 @@ def today(): return dt.datetime.now(TZ).date()
 def next_month(day, anchor):
     year, month = day.year + (day.month == 12), day.month % 12 + 1
     return dt.date(year, month, min(anchor, calendar.monthrange(year, month)[1]))
+class ClosingConnection(sqlite3.Connection):
+    def __exit__(self, *args):
+        try:
+            return super().__exit__(*args)
+        finally:
+            self.close()
+
 def connect():
     DB.parent.mkdir(exist_ok=True)
-    c = sqlite3.connect(DB)
+    c = sqlite3.connect(DB, factory=ClosingConnection)
     c.row_factory = sqlite3.Row
     c.execute('CREATE TABLE IF NOT EXISTS accounts(id INTEGER PRIMARY KEY,email TEXT NOT NULL,due TEXT NOT NULL,amount TEXT,app TEXT,device TEXT,anchor INTEGER NOT NULL,paid TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS notices(account INTEGER,due TEXT,PRIMARY KEY(account,due))')

@@ -14,7 +14,17 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install pyinstaller==6.16.0
-      - run: python -m unittest discover -s tests -v
+      - name: Test logic and Windows GUI
+        shell: python
+        run: |
+          import io, os, sys, unittest
+          output = io.StringIO()
+          suite = unittest.defaultTestLoader.discover('tests')
+          result = unittest.TextTestRunner(stream=output, verbosity=2).run(suite)
+          print(output.getvalue())
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+              summary.write('## Test results\n\n```text\n' + output.getvalue() + '\n```\n')
+          sys.exit(0 if result.wasSuccessful() else 1)
       - run: pyinstaller --noconfirm --onefile --windowed --name SoGiaHan desktop.py
       - uses: actions/upload-artifact@v4
         with:
