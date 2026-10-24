@@ -28,13 +28,13 @@ def reminder():
     messagebox.showwarning('Nhắc gia hạn trước 3 ngày', summary + '\n\nMở Sổ Gia Hạn để kiểm tra và xác nhận đã gia hạn.', parent=root)
     root.destroy()
 
-def enable_schedule():
+def enable_schedule(entrypoint=None):
     if sys.platform != 'win32': raise ValueError('Lịch nhắc này dành cho Windows')
     if getattr(sys,'frozen',False):
         exe=sys.executable; args='--remind'
     else:
         exe=str(Path(sys.executable).with_name('pythonw.exe'))
-        args='"'+str(Path(__file__).resolve())+'" --remind'
+        args='"'+str(Path(entrypoint or __file__).resolve())+'" --remind'
     # Escape PowerShell literals independently of shell quoting.
     quote=lambda s: "'"+s.replace("'","''")+"'"
     command=(f"$a=New-ScheduledTaskAction -Execute {quote(exe)} -Argument {quote(args)};"
@@ -76,7 +76,7 @@ class Desktop:
         self.items={r['id']:r for r in records()}
         for r in self.items.values():
             if self.search.get().casefold() not in (r['email']+' '+r['app']).casefold():continue
-            due=dt.date.fromisoformat(r['due']);days=(due-app.today()).days;following=due
+            due=dt.date.fromisoformat(r['due']);days=(due-app.today()).days;following=app.next_month(due,r['anchor'])
             while following<=app.today():following=app.next_month(following,r['anchor'])
             status=f'Quá hạn {-days} ngày' if days<0 else f'Còn {days} ngày'
             self.table.insert('', 'end',iid=str(r['id']),values=(r['email'],r['app'],r['due'],following.isoformat(),f"{int(r['amount']):,}đ".replace(',','.'),r['device'],status),tags=('urgent',) if days<=3 else ())

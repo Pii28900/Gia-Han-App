@@ -1,57 +1,53 @@
-# Sổ Gia Hạn — app Windows
+# Sổ Gia Hạn — app Windows mở trong Chrome
 
-Ứng dụng desktop Tkinter, lưu dữ liệu SQLite trên máy. Không gửi email và không cần chạy máy chủ. Python 3.12+ có Tkinter là đủ, không cần thư viện bên ngoài.
+Giao diện quản lý gia hạn tiếng Việt, mở trong tab Chrome. Dữ liệu chỉ lưu trên máy. Không gửi email và không cần tài khoản dịch vụ.
 
-## Cài bản mã nguồn trên Windows
+## Dùng bản EXE (không cần cài Python)
 
-1. Cài Python 3.12+ từ python.org, bao gồm Tcl/Tk và Python Launcher.
-2. Giải nén toàn bộ gói vào thư mục cố định, ví dụ Documents\SoGiaHan. Không chạy bên trong ZIP.
-3. Bấm `Start-Windows.bat`.
-4. Bấm **Bật nhắc Windows** trong app để đăng ký lịch nhắc lúc 09:00 mỗi ngày. Giữ nguyên thư mục này vì lịch tham chiếu tới đường dẫn app.
+1. Đăng nhập GitHub, mở tab **Actions** của repository, chọn lần chạy **Build Windows App** thành công mới nhất.
+2. Kéo xuống **Artifacts**, tải **SoGiaHan-Windows**, giải nén vào thư mục cố định.
+3. Mở `SoGiaHan.exe`. App chạy máy chủ nội bộ và mở tab Chrome; nếu không tìm thấy Chrome sẽ dùng trình duyệt mặc định. Mở EXE lần nữa sẽ mở lại tab, không khởi tạo thêm máy chủ.
+4. Bấm **Nhập Excel** và chọn HSD.xlsx trên máy hoặc bấm **Thêm email**.
+5. Bấm **Bật thông báo Chrome**, chọn **Cho phép** trong trình duyệt.
+6. Bấm **Nhắc cả khi đóng tab** để đăng ký lịch Windows lúc 09:00 mỗi ngày.
 
-Thông báo là cửa sổ nhắc Windows chứa các tài khoản còn tối đa 3 ngày hoặc quá hạn. Khi cửa sổ app chính đã đóng, Windows Task Scheduler vẫn chạy phần nhắc. Máy phải đang bật và người dùng đăng nhập; nếu bỏ lỡ lịch, Windows được cấu hình chạy bù khi có thể. Không đánh thức máy đang tắt. Tắt nhắc bằng cách xóa tác vụ `SoGiaHanReminder` trong Task Scheduler.
+Thông báo Chrome chỉ hoạt động khi tab đang mở. Khi đóng tab, lịch Windows vẫn có thể hiện cửa sổ nhắc riêng, không giả lập thông báo Chrome. Máy cần đang bật, bạn đã đăng nhập; Windows được cấu hình chạy bù khi bỏ lỡ lịch. Không nhắc khi máy tắt. Chrome/Windows có thể chặn thông báo nếu quyền bị tắt hoặc chế độ không làm phiền đang bật.
 
-Dữ liệu chính nằm ở `%LOCALAPPDATA%\SoGiaHan\accounts.db`. Bấm **Sao lưu** để xuất bản sao SQLite nhất quán. Bản ZIP riêng gửi người dùng có `seed/accounts.db` chứa 11 tài khoản đã nhập đúng từ HSD.xlsx. Seed chỉ được sao chép khi chưa có DB người dùng; không ghi đè dữ liệu cũ. Không đưa seed, Excel hoặc DB cá nhân lên Git. Bản build công khai không kèm dữ liệu riêng.
+Giữ nguyên vị trí EXE. Nếu di chuyển EXE hoặc cập nhật từ bản cũ, mở bản mới rồi bấm lại **Nhắc cả khi đóng tab** để cập nhật đường dẫn tác vụ. Tắt lịch: xóa `SoGiaHanReminder` trong Task Scheduler.
 
-## Thêm hoặc xóa email cần nhắc
+Đóng tab không tắt tiến trình nền. Muốn thoát hoàn toàn, dùng Task Manager kết thúc `SoGiaHan.exe`. Khi thay phiên bản, đóng tiến trình cũ trước khi mở EXE mới. Máy chủ chỉ lắng nghe loopback cổng 8000, không triển khai lên Internet. Nếu cổng này đang được app khác dùng, hãy đóng ứng dụng đó trước.
 
-- Bấm **Thêm email cần nhắc**, nhập Gmail, app, ngày đến hạn, số tiền VNĐ và bấm **Lưu**. Email được đưa vào lịch nhắc hiện có, không cần bật lại lịch Windows.
-- Chọn một hoặc nhiều dòng (giữ Ctrl/Shift), bấm **Xóa email đã chọn** rồi xác nhận. Chỉ xóa các dòng đã chọn và dừng nhắc cho chúng; không xóa tài khoản Gmail thật hoặc các app khác cùng Gmail.
-- Nếu chưa bật lịch Windows, bấm **Bật nhắc Windows** một lần để nhận nhắc khi cửa sổ app đóng.
-- Khi cập nhật, đóng app, giải nén vào cùng thư mục cũ. Dữ liệu tại `%LOCALAPPDATA%\SoGiaHan` được giữ nguyên. Nếu đổi thư mục cài, bấm lại **Bật nhắc Windows**.
+## Dữ liệu và quản lý tài khoản
 
-## Tính năng
+- SQLite tại `%LOCALAPPDATA%\SoGiaHan\accounts.db`, dùng chung với bản desktop cũ nên giữ được dữ liệu hiện có. Bản GitHub không kèm Gmail/Excel/DB cá nhân.
+- **Thêm email**: Gmail, app, ngày đến hạn, số tiền VNĐ, thiết bị/ghi chú. **Sửa** để cập nhật.
+- Chọn checkbox một hoặc nhiều dòng rồi **Xóa đã chọn**. Chỉ xóa khỏi lịch nhắc, không xóa tài khoản Gmail thật.
+- **Sao lưu** tải bản SQLite nhất quán. Giữ bản sao riêng vì chứa dữ liệu cá nhân. Có thể phục hồi bằng cách đóng app hoàn toàn rồi thay file SQLite ở đường dẫn trên bằng bản sao.
+- **Đã gia hạn** chuyển ngày tới kỳ tương lai gần nhất; không tự thanh toán. Cột kỳ tiếp dự kiến tính sau kỳ hiện tại. Ngày gốc giữ qua tháng ngắn: 31/01 → 28/02 → 31/03.
+- Bộ lọc trạng thái, tìm Gmail/app, tổng chi phí hàng tháng và số tài khoản sắp/quá hạn.
 
-- Thêm/sửa/xóa, tìm Gmail/app, nhập Excel, sao lưu.
-- Ngày tháng nhập thủ công dạng YYYY-MM-DD.
-- Chu kỳ hàng tháng, giữ ngày gốc qua tháng ngắn: 31/01 → 28/02 → 31/03.
-- Lịch kỳ tiếp dự kiến được tính tự động; hạn chưa thanh toán giữ nguyên cho đến khi bấm **Đã gia hạn**, chuyển tới kỳ tương lai gần nhất. Không tự thu tiền hoặc thao tác với nhà cung cấp.
-- Excel: nhận diện các cột theo tên `Địa chỉ mail`, `Ngày gia hạn sắp tới`, `giá tiền`, `App`, `Mail đang login ở`; hỗ trợ cả bản có/không có cột `Quy cách gia hạn`. Hiện chỉ hỗ trợ chu kỳ hàng tháng.
-- Tiền Excel tính theo nghìn đồng: 165 = 165.000đ. Tiền nhập trong app là VNĐ: nhập 165000. Không nhân lại khi mở app.
-- Import bỏ qua cùng Gmail/app/ngày đã có; kiểm tra dữ liệu trước khi nhập lại sau khi sửa ngày thủ công.
+Excel: nhận cột theo tên `Địa chỉ mail`, `Ngày gia hạn sắp tới`, `giá tiền`, `App`, `Mail đang login ở`; nhận cả bản có cột `Quy cách gia hạn`. Chỉ hỗ trợ chu kỳ hàng tháng. Số tiền Excel tính theo nghìn đồng: **165 → 165.000đ**; số tiền nhập thủ công là VNĐ: **165000**. Import bỏ qua cùng Gmail/app/ngày đã có.
 
-## Build file EXE
+## Phát triển và build
 
-Workflow `.github/workflows/windows.yml` tự chạy khi push lên `main`, hoặc chạy thủ công qua GitHub Actions. Workflow kiểm tra logic và giao diện trên Windows rồi tạo artifact `SoGiaHan-Windows` chứa `SoGiaHan.exe`. File EXE chưa ký số. Không cần Python trên máy dùng bản EXE.
-
-Tải EXE: vào tab **Actions** của repository → chọn lần chạy **Build Windows App** đã thành công → phần **Artifacts** → tải **SoGiaHan-Windows** (cần đăng nhập GitHub). Giải nén, giữ EXE ở thư mục cố định và chạy. Bản build không chứa dữ liệu cá nhân: bấm **Nhập Excel**, chọn file HSD.xlsx trên máy, rồi bấm **Bật nhắc Windows**. Nếu chưa bật GitHub Actions, bật Actions trong repository trước khi chạy workflow.
-
-Build trực tiếp trên máy Windows:
-
-```
-python -m pip install pyinstaller==6.16.0
-pyinstaller --noconfirm --onefile --windowed --name SoGiaHan desktop.py
-```
-
-Để kèm seed riêng khi build cá nhân, thêm `--add-data "seed;seed"`; giữ dữ liệu riêng ngoài Git.
-
-## Phát triển và kiểm tra
+Python 3.12+ và Tkinter, không cần thư viện ngoài cho app:
 
 ```
 python -m unittest discover -s tests -v
-python desktop.py
+python browser_app.py
 ```
 
-Trong cloud Linux không có màn hình Windows: đã kiểm tra logic lịch, tiền, hai cấu trúc Excel và đối chiếu 11 dòng dữ liệu; chưa xác minh giao diện và Task Scheduler trên Windows thực tế. Không coi kiểm tra cú pháp là bằng chứng thông báo Windows đã hoạt động.
+`Start-Windows.bat` mở bản mã nguồn trong trình duyệt (cần Python); `desktop.py` vẫn giữ giao diện Tkinter và cung cấp cửa sổ nhắc nền Windows.
 
-Bản web nội bộ cũ vẫn chạy bằng `python app.py`, chỉ lắng nghe loopback cổng 8000; không có đăng nhập hay triển khai công khai. Nó dùng `data/accounts.db` riêng, không đồng bộ với desktop. Không dùng phần web để kiểm chứng thông báo desktop.
+Kiểm tra trình duyệt: cài Playwright, chạy `python tests/browser_smoke.py` với Chrome đã cài; Linux có thể đặt `CHROME_PATH=/usr/bin/chromium`.
+
+GitHub Actions tự chạy khi push `main` hoặc workflow_dispatch: kiểm tra logic, Tk trên Windows, giao diện Chrome thực, đóng gói rồi kiểm tra HTTP của EXE trước khi upload artifact.
+
+Build trên Windows:
+
+```
+python -m pip install pyinstaller==6.16.0
+pyinstaller --noconfirm --onefile --windowed --add-data "static;static" --name SoGiaHan browser_app.py
+```
+
+EXE chưa ký số. Không đưa DB, Excel, thông tin riêng vào Git. Việc phân phối thông báo thật trên máy người dùng còn phụ thuộc quyền Chrome/Windows và trạng thái đăng nhập.

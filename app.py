@@ -1,4 +1,4 @@
-import calendar, datetime as dt, io, json, sqlite3, zipfile
+import calendar, datetime as dt, io, json, sqlite3, zipfile, sys, tempfile
 from decimal import Decimal, InvalidOperation
 import xml.etree.ElementTree as ET
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -94,41 +94,73 @@ class Handler(BaseHTTPRequestHandler):
     def send(self,status,obj):
         data=json.dumps(obj,ensure_ascii=False).encode()
         self.send_response(status); self.send_header('Content-Type','application/json; charset=utf-8'); self.send_header('Content-Length',str(len(data))); self.send_header('Cache-Control','no-store'); self.end_headers(); self.wfile.write(data)
+    def valid_host(self):
+        return self.headers.get('Host','').split(':')[0] in ('127.0.0.1','localhost')
     def do_GET(self):
+        if not self.valid_host(): return self.send(403,{'error':'Host không hợp lệ'})
+        if self.path=='/api/health':
+            return self.send(200,{'app':'so-gia-han','version':2,'windows':sys.platform=='win32'})
+        if self.path=='/api/backup':
+            with tempfile.TemporaryDirectory() as folder:
+                target=Path(folder)/'accounts.db'
+                with connect() as c, ClosingConnection(target) as backup: c.backup(backup)
+                data=target.read_bytes()
+            self.send_response(200); self.send_header('Content-Type','application/octet-stream')
+            self.send_header('Content-Disposition','attachment; filename="SoGiaHan-backup.db"')
+            self.send_header('Content-Length',str(len(data))); self.send_header('Cache-Control','no-store')
+            self.end_headers(); self.wfile.write(data); return
         if self.path=='/api/accounts':
             with connect() as c: records=[dict(x) for x in c.execute('SELECT * FROM accounts ORDER BY due')]
             for a in records:
-                due=dt.date.fromisoformat(a['due']); upcoming=due
+                due=dt.date.fromisoformat(a['due']); upcoming=next_month(due,a['anchor'])
                 while upcoming<=today(): upcoming=next_month(upcoming,a['anchor'])
                 a.update(days=(due-today()).days,next_due=upcoming.isoformat())
-            return self.send(200,dict(accounts=records))
+            return self.send(200,dict(accounts=records,today=today().isoformat()))
         if self.path!='/': return self.send(404,{'error':'Không tìm thấy'})
         data=(ROOT/'static/index.html').read_bytes()
         self.send_response(200); self.send_header('Content-Type','text/html; charset=utf-8'); self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data)
     def do_POST(self):
+        if not self.valid_host(): return self.send(403,{'error':'Host không hợp lệ'})
         if self.headers.get('Origin') and self.headers['Origin'] != 'http://'+self.headers.get('Host',''): return self.send(403,{'error':'Origin không hợp lệ'})
         try:
             size=int(self.headers.get('Content-Length',0))
             if not 0<size<=5_000_000: raise ValueError('Kích thước yêu cầu không hợp lệ')
             raw=self.rfile.read(size)
+            if self.path=='/api/schedule':
+                if sys.platform!='win32': return self.send(400,{'error':'Lịch nhắc nền chỉ dành cho Windows'})
+                from desktop import enable_schedule
+                enable_schedule(ROOT/'browser_app.py')
+                return self.send(200,{'ok':True})
             with connect() as c:
                 if self.path=='/api/import':
                     accounts=rows_from_xlsx(raw); count=0
                     for a in accounts:
                         if not c.execute('SELECT 1 FROM accounts WHERE email=? AND app=? AND due=?',(a['email'],a['app'],a['due'])).fetchone(): insert(c,a); count+=1
+                    c.commit()
                     return self.send(200,{'imported':count})
                 a=json.loads(raw)
                 if self.path=='/api/add': insert(c,a)
+                elif self.path=='/api/edit':
+                    due=dt.date.fromisoformat(a['due'])
+                    if '@' not in a['email'] or not a.get('app','').strip(): raise ValueError('Cần Gmail và tên app')
+                    row=c.execute('SELECT * FROM accounts WHERE id=?',(int(a['id']),)).fetchone()
+                    if not row: raise ValueError('Không tìm thấy tài khoản')
+                    anchor=row['anchor'] if row['due']==a['due'] else due.day
+                    c.execute('UPDATE accounts SET email=?,app=?,due=?,amount=?,device=?,anchor=? WHERE id=?',
+                              (a['email'].strip(),a['app'].strip(),a['due'],to_vnd(a.get('amount','0')),a.get('device',''),anchor,row['id']))
                 elif self.path=='/api/paid':
                     row=c.execute('SELECT * FROM accounts WHERE id=?',(int(a['id']),)).fetchone()
                     if not row: raise ValueError('Không tìm thấy tài khoản')
                     due=next_month(dt.date.fromisoformat(row['due']),row['anchor'])
                     while due<=today(): due=next_month(due,row['anchor'])
                     c.execute('UPDATE accounts SET due=?,paid=? WHERE id=?',(due.isoformat(),today().isoformat(),row['id']))
-                elif self.path=='/api/delete': c.execute('DELETE FROM accounts WHERE id=?',(int(a['id']),))
+                elif self.path=='/api/delete':
+                    ids=[(int(key),) for key in a.get('ids',[a.get('id')])]
+                    c.executemany('DELETE FROM notices WHERE account=?',ids)
+                    c.executemany('DELETE FROM accounts WHERE id=?',ids)
                 else: return self.send(404,{'error':'Không tìm thấy'})
             self.send(200,{'ok':True})
-        except (ValueError,KeyError,zipfile.BadZipFile,ET.ParseError): self.send(400,{'error':'Dữ liệu không hợp lệ. Kiểm tra ngày và cấu trúc file HSD.'})
+        except (ValueError,KeyError,TypeError,OverflowError,IndexError,zipfile.BadZipFile,ET.ParseError): self.send(400,{'error':'Dữ liệu không hợp lệ. Kiểm tra ngày và cấu trúc file HSD.'})
 
 if __name__=='__main__':
     with connect(): pass
