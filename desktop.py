@@ -38,7 +38,7 @@ def enable_schedule(entrypoint=None):
     # Escape PowerShell literals independently of shell quoting.
     quote=lambda s: "'"+s.replace("'","''")+"'"
     command=(f"$a=New-ScheduledTaskAction -Execute {quote(exe)} -Argument {quote(args)};"
-             "$t=New-ScheduledTaskTrigger -Daily -At '09:00';"
+             "$t=New-ScheduledTaskTrigger -Daily -At '18:00';"
              "$s=New-ScheduledTaskSettingsSet -StartWhenAvailable;"
              "$u=[System.Security.Principal.WindowsIdentity]::GetCurrent().Name;"
              "$p=New-ScheduledTaskPrincipal -UserId $u -LogonType Interactive -RunLevel Limited;"
@@ -65,7 +65,7 @@ class Desktop:
         self.table.tag_configure('urgent',foreground='#b13b18')
         scroll=ttk.Scrollbar(frame,orient='vertical',command=self.table.yview);self.table.configure(yscrollcommand=scroll.set)
         scroll.pack(side='right',fill='y');self.table.pack(fill='both',expand=True)
-        ttk.Label(root,text='Đã gia hạn: chuyển đến kỳ tương lai gần nhất. Không tự thanh toán.\nNhắc Windows lúc 09:00 mỗi ngày; máy cần bật và bạn đang đăng nhập. Không gửi email.').pack(anchor='w',padx=20,pady=10)
+        ttk.Label(root,text='Đã gia hạn: chuyển đến kỳ tương lai gần nhất. Không tự thanh toán.\nNhắc Windows lúc 18:00 mỗi ngày; máy cần bật và bạn đang đăng nhập. Không gửi email.').pack(anchor='w',padx=20,pady=10)
         self.refresh();self.tick()
     def safe(self,fn):
         try: fn()
@@ -140,7 +140,7 @@ class Desktop:
             with app.connect() as c,sqlite3.connect(name) as target:c.backup(target)
             messagebox.showinfo('Sao lưu','Đã lưu bản sao dữ liệu.')
     def schedule(self):
-        enable_schedule();messagebox.showinfo('Đã bật nhắc','Windows đã lưu lịch nhắc mỗi ngày lúc 09:00. Có thể đóng app. Giữ nguyên thư mục app để lịch hoạt động.\nTắt nhắc: mở Task Scheduler và xóa SoGiaHanReminder.')
+        enable_schedule();messagebox.showinfo('Đã bật nhắc','Windows đã lưu lịch nhắc mỗi ngày lúc 18:00. Có thể đóng app. Giữ nguyên thư mục app để lịch hoạt động.\nTắt nhắc: mở Task Scheduler và xóa SoGiaHanReminder.')
 
 if __name__=='__main__':
     if '--remind' in sys.argv:reminder()

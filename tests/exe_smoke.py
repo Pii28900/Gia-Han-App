@@ -31,6 +31,8 @@ def main():
    post('api/add',dict(email='exe-test@example.com',app='Test',due=datetime.date.today().isoformat(),amount='165000'))
    with opener.open(url+'api/accounts') as r:accounts=json.load(r)['accounts']
    assert len(accounts)==1 and accounts[0]['amount']=='165000'
+   with opener.open(url+'api/calendar.ics') as r:calendar=r.read()
+   assert calendar.count(b'BEGIN:VEVENT')==1 and b'TRIGGER:-P3D' in calendar
    post('api/delete',dict(ids=[accounts[0]['id']]))
    assert (Path(tmp)/'SoGiaHan/accounts.db').is_file()
    print('PASS: packaged Windows EXE startup, embedded web interface, add/delete API and data storage')

@@ -46,3 +46,14 @@ class HTTPTests(unittest.TestCase):
   with self.assertRaises(urllib.error.HTTPError) as e:self.post('/api/add',dict(email='test@example.com',app='Test',due='bad',amount='1'))
   self.assertEqual(e.exception.code,400)
   self.assertEqual(self.get('/api/accounts')['accounts'],[])
+ def test_automatic_chrome_reminders_wait_until_18(self):
+  import datetime
+  from unittest.mock import patch
+  clock=datetime.datetime
+  for hour,minute,ready in [(17,59,False),(18,0,True),(23,59,True)]:
+   fixed=clock(2026,10,25,hour,minute,tzinfo=app.TZ)
+   class FakeClock(clock):
+    @classmethod
+    def now(cls,tz=None):return fixed
+   with patch.object(app.dt,'datetime',FakeClock):
+    self.assertEqual(self.get('/api/accounts')['reminder_ready'],ready)

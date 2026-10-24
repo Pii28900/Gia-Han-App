@@ -36,3 +36,11 @@ class WindowsDesktopTests(unittest.TestCase):
                 self.assertEqual(app.due_accounts(),[])
             finally:
                 root.destroy();app.DB=old_db
+    def test_windows_schedule_updates_to_18(self):
+        import desktop
+        from types import SimpleNamespace
+        with patch.object(desktop.subprocess,'run',return_value=SimpleNamespace(returncode=0)) as run:
+            desktop.enable_schedule()
+        command=run.call_args.args[0][-1]
+        self.assertIn("-Daily -At '18:00'",command)
+        self.assertIn('-Force',command)

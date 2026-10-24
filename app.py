@@ -100,6 +100,14 @@ class Handler(BaseHTTPRequestHandler):
         if not self.valid_host(): return self.send(403,{'error':'Host không hợp lệ'})
         if self.path=='/api/health':
             return self.send(200,{'app':'so-gia-han','version':2,'windows':sys.platform=='win32'})
+        if self.path=='/api/calendar.ics':
+            from calendar_export import export_calendar
+            with connect() as c: accounts=[dict(row) for row in c.execute('SELECT * FROM accounts ORDER BY due')]
+            data=export_calendar(accounts)
+            self.send_response(200); self.send_header('Content-Type','text/calendar; charset=utf-8')
+            self.send_header('Content-Disposition','attachment; filename="SoGiaHan-iPad.ics"')
+            self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(data)))
+            self.end_headers();self.wfile.write(data);return
         if self.path=='/api/backup':
             with tempfile.TemporaryDirectory() as folder:
                 target=Path(folder)/'accounts.db'
@@ -115,7 +123,7 @@ class Handler(BaseHTTPRequestHandler):
                 due=dt.date.fromisoformat(a['due']); upcoming=next_month(due,a['anchor'])
                 while upcoming<=today(): upcoming=next_month(upcoming,a['anchor'])
                 a.update(days=(due-today()).days,next_due=upcoming.isoformat())
-            return self.send(200,dict(accounts=records,today=today().isoformat()))
+            return self.send(200,dict(accounts=records,today=today().isoformat(),reminder_ready=dt.datetime.now(TZ).hour>=18))
         if self.path!='/': return self.send(404,{'error':'Không tìm thấy'})
         data=(ROOT/'static/index.html').read_bytes()
         self.send_response(200); self.send_header('Content-Type','text/html; charset=utf-8'); self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data)

@@ -62,6 +62,14 @@ def main():
     expect(page.locator('#total')).to_have_text('2')
     page.locator('#theme-toggle').click()
     expect(page.locator('html')).to_have_attribute('data-theme','light')
+    page.locator('#ipad').click()
+    expect(page.locator('#ipad-info')).to_be_visible()
+    with page.expect_download() as info:page.locator('#ipad-download').click()
+    downloaded=info.value
+    calendar=Path(downloaded.path()).read_bytes()
+    assert calendar.startswith(b'BEGIN:VCALENDAR') and calendar.count(b'BEGIN:VEVENT')==2
+    assert b'TRIGGER:-P3D' in calendar
+    page.locator('#ipad-close').click()
     page.locator('#select-all').check();page.locator('#bulk-delete').click()
     expect(page.locator('#total')).to_have_text('0')
     # Verify layout remains usable on a narrow window.
@@ -70,7 +78,7 @@ def main():
     page.locator('#cancel').click()
     assert not errors,errors
     browser.close()
-    print('PASS: Chrome add, edit, renew, Excel import/dedup, search, bulk delete, persisted day/night themes and mobile layout; no JS errors')
+    print('PASS: Chrome add, edit, renew, Excel import/dedup, search, bulk delete, persisted day/night themes, iPad calendar download and mobile layout; no JS errors')
   finally:
    server.shutdown();server.server_close();thread.join()
 if __name__=='__main__':main()
