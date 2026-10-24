@@ -1,3 +1,5 @@
+> Tài liệu của bản cũ. Nút Lịch iPad đã được bỏ khỏi giao diện theo yêu cầu; không cần thực hiện các bước bên dưới cho bản Windows hiện tại.
+
 # Nhận nhắc bằng ứng dụng Lịch trên iPad
 
 Bản này xuất lịch độc lập, không cần EXE chạy trên iPad hoặc máy chủ HTTPS, không tự đồng bộ với Windows.

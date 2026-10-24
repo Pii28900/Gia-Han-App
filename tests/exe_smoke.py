@@ -24,7 +24,7 @@ def main():
     time.sleep(.5)
    else:raise AssertionError('EXE did not become ready')
    with opener.open(url) as r:page=r.read()
-   assert b'id="theme-toggle"' in page and 'Sổ Gia Hạn'.encode() in page
+   assert b'id="theme-toggle"' in page and b'id="undo"' in page and b'id="ipad"' not in page
    def post(path,data):
     request=urllib.request.Request(url+path,json.dumps(data).encode(),{'Content-Type':'application/json'})
     with opener.open(request) as r:return json.load(r)
@@ -34,8 +34,14 @@ def main():
    with opener.open(url+'api/calendar.ics') as r:calendar=r.read()
    assert calendar.count(b'BEGIN:VEVENT')==1 and b'TRIGGER:-P3D' in calendar
    post('api/delete',dict(ids=[accounts[0]['id']]))
+   with opener.open(url+'api/accounts') as r:deleted=json.load(r)
+   assert not deleted['accounts'] and deleted['undo']['label']=='xóa tài khoản'
+   post('api/undo',{'id':deleted['undo']['id']})
+   with opener.open(url+'api/accounts') as r:restored=json.load(r)['accounts']
+   assert len(restored)==1 and restored[0]['email']=='exe-test@example.com'
+   with opener.open(url+'sw.js') as r:assert b'notificationclick' in r.read()
    assert (Path(tmp)/'SoGiaHan/accounts.db').is_file()
-   print('PASS: packaged Windows EXE startup, embedded web interface, add/delete API and data storage')
+   print('PASS: packaged Windows EXE startup, embedded web interface, add/delete/undo API, notification worker and data storage')
   finally:
    subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
    process.wait(timeout=20)

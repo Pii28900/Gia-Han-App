@@ -57,3 +57,26 @@ class HTTPTests(unittest.TestCase):
     def now(cls,tz=None):return fixed
    with patch.object(app.dt,'datetime',FakeClock):
     self.assertEqual(self.get('/api/accounts')['reminder_ready'],ready)
+ def test_undo_restores_deleted_accounts_and_rejects_stale_requests(self):
+  for email in ('first@example.com','keep@example.com'):
+   self.post('/api/add',dict(email=email,app='Test',due='2026-02-28',amount='165000'))
+  before=self.get('/api/accounts');old_undo=before['undo']['id'];key=before['accounts'][0]['id']
+  self.post('/api/delete',{'ids':[key]})
+  with self.assertRaises(urllib.error.HTTPError) as e:self.post('/api/undo',{'id':old_undo})
+  self.assertEqual(e.exception.code,409)
+  current=self.get('/api/accounts');self.assertEqual(len(current['accounts']),1)
+  self.post('/api/undo',{'id':current['undo']['id']})
+  self.assertEqual([a['email'] for a in self.get('/api/accounts')['accounts']],[a['email'] for a in before['accounts']])
+ def test_external_changes_are_not_overwritten_by_undo(self):
+  self.post('/api/add',dict(email='first@example.com',app='Test',due='2026-02-28',amount='1'))
+  previous=self.get('/api/accounts')['undo']['id']
+  with app.connect() as c:app.insert(c,dict(email='external@example.com',app='Test',due='2026-02-28',amount='2'))
+  self.assertIsNone(self.get('/api/accounts')['undo'])
+  with self.assertRaises(urllib.error.HTTPError) as e:self.post('/api/undo',{'id':previous})
+  self.assertEqual(e.exception.code,409)
+  self.assertEqual(len(self.get('/api/accounts')['accounts']),2)
+ def test_history_persists_and_is_bounded(self):
+  for n in range(23):self.post('/api/add',dict(email=f'test{n}@example.com',app='Test',due='2026-02-28',amount='1'))
+  for n in range(20):
+   state=self.get('/api/accounts');self.post('/api/undo',{'id':state['undo']['id']})
+  state=self.get('/api/accounts');self.assertIsNone(state['undo']);self.assertEqual(len(state['accounts']),3)

@@ -1,6 +1,7 @@
 import calendar, datetime as dt, io, json, sqlite3, zipfile, sys, tempfile
 from decimal import Decimal, InvalidOperation
 import xml.etree.ElementTree as ET
+import account_history as history
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -25,6 +26,7 @@ def connect():
     c.row_factory = sqlite3.Row
     c.execute('CREATE TABLE IF NOT EXISTS accounts(id INTEGER PRIMARY KEY,email TEXT NOT NULL,due TEXT NOT NULL,amount TEXT,app TEXT,device TEXT,anchor INTEGER NOT NULL,paid TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS notices(account INTEGER,due TEXT,PRIMARY KEY(account,due))')
+    c.execute('CREATE TABLE IF NOT EXISTS account_history(id INTEGER PRIMARY KEY AUTOINCREMENT,before_json TEXT NOT NULL,after_digest TEXT NOT NULL,label TEXT NOT NULL)')
     return c
 
 def rows_from_xlsx(raw):
@@ -98,6 +100,11 @@ class Handler(BaseHTTPRequestHandler):
         return self.headers.get('Host','').split(':')[0] in ('127.0.0.1','localhost')
     def do_GET(self):
         if not self.valid_host(): return self.send(403,{'error':'Host không hợp lệ'})
+        if self.path in ('/sw.js','/icons/icon-192.png'):
+            filename='sw.js' if self.path=='/sw.js' else 'icons/icon-192.png'
+            data=(ROOT/'static'/filename).read_bytes()
+            self.send_response(200);self.send_header('Content-Type','text/javascript' if filename=='sw.js' else 'image/png')
+            self.send_header('Content-Length',str(len(data)));self.send_header('Cache-Control','no-store');self.end_headers();self.wfile.write(data);return
         if self.path=='/api/health':
             return self.send(200,{'app':'so-gia-han','version':2,'windows':sys.platform=='win32'})
         if self.path=='/api/calendar.ics':
@@ -118,12 +125,15 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Length',str(len(data))); self.send_header('Cache-Control','no-store')
             self.end_headers(); self.wfile.write(data); return
         if self.path=='/api/accounts':
-            with connect() as c: records=[dict(x) for x in c.execute('SELECT * FROM accounts ORDER BY due')]
+            with connect() as c:
+                c.execute('BEGIN')
+                records=[dict(x) for x in c.execute('SELECT * FROM accounts ORDER BY due')]
+                undo=history.available(c)
             for a in records:
                 due=dt.date.fromisoformat(a['due']); upcoming=next_month(due,a['anchor'])
                 while upcoming<=today(): upcoming=next_month(upcoming,a['anchor'])
                 a.update(days=(due-today()).days,next_due=upcoming.isoformat())
-            return self.send(200,dict(accounts=records,today=today().isoformat(),reminder_ready=dt.datetime.now(TZ).hour>=18))
+            return self.send(200,dict(accounts=records,undo=undo,today=today().isoformat(),reminder_ready=dt.datetime.now(TZ).hour>=18))
         if self.path!='/': return self.send(404,{'error':'Không tìm thấy'})
         data=(ROOT/'static/index.html').read_bytes()
         self.send_response(200); self.send_header('Content-Type','text/html; charset=utf-8'); self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data)
@@ -140,14 +150,16 @@ class Handler(BaseHTTPRequestHandler):
                 enable_schedule(ROOT/'browser_app.py')
                 return self.send(200,{'ok':True})
             with connect() as c:
+                c.execute('BEGIN IMMEDIATE');before=history.snapshot(c)
                 if self.path=='/api/import':
                     accounts=rows_from_xlsx(raw); count=0
                     for a in accounts:
                         if not c.execute('SELECT 1 FROM accounts WHERE email=? AND app=? AND due=?',(a['email'],a['app'],a['due'])).fetchone(): insert(c,a); count+=1
-                    c.commit()
+                    history.record(c,before,self.path);c.commit()
                     return self.send(200,{'imported':count})
                 a=json.loads(raw)
-                if self.path=='/api/add': insert(c,a)
+                if self.path=='/api/undo':history.undo(c,a['id'])
+                elif self.path=='/api/add': insert(c,a)
                 elif self.path=='/api/edit':
                     due=dt.date.fromisoformat(a['due'])
                     if '@' not in a['email'] or not a.get('app','').strip(): raise ValueError('Cần Gmail và tên app')
@@ -167,8 +179,10 @@ class Handler(BaseHTTPRequestHandler):
                     c.executemany('DELETE FROM notices WHERE account=?',ids)
                     c.executemany('DELETE FROM accounts WHERE id=?',ids)
                 else: return self.send(404,{'error':'Không tìm thấy'})
+                if self.path!='/api/undo':history.record(c,before,self.path)
             self.send(200,{'ok':True})
-        except (ValueError,KeyError,TypeError,OverflowError,IndexError,zipfile.BadZipFile,ET.ParseError): self.send(400,{'error':'Dữ liệu không hợp lệ. Kiểm tra ngày và cấu trúc file HSD.'})
+        except history.HistoryConflict as error:self.send(409,{'error':str(error)})
+        except (ValueError,KeyError,TypeError,OverflowError,IndexError,zipfile.BadZipFile,ET.ParseError,sqlite3.DatabaseError): self.send(400,{'error':'Dữ liệu không hợp lệ. Kiểm tra ngày và cấu trúc file HSD.'})
 
 if __name__=='__main__':
     with connect(): pass

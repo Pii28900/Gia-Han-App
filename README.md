@@ -8,7 +8,7 @@ Giao diện quản lý gia hạn tiếng Việt, mở trong tab Chrome. Dữ li�
 2. Kéo xuống **Artifacts**, tải **SoGiaHan-Windows**, giải nén vào thư mục cố định.
 3. Mở `SoGiaHan.exe`. App chạy máy chủ nội bộ và mở tab Chrome; nếu không tìm thấy Chrome sẽ dùng trình duyệt mặc định. Mở EXE lần nữa sẽ mở lại tab, không khởi tạo thêm máy chủ.
 4. Bấm **Nhập Excel** và chọn HSD.xlsx trên máy hoặc bấm **Thêm email**.
-5. Bấm **Bật thông báo Chrome**, chọn **Cho phép** trong trình duyệt.
+5. Bấm **Thử thông báo**, chọn **Cho phép** trong Chrome. App sẽ tạo thông báo thử ngay, không phải chờ 18:00.
 6. Bấm **Nhắc cả khi đóng tab** để đăng ký lịch Windows lúc 18:00 mỗi ngày.
 
 Thông báo Chrome tự động chỉ phát từ 18:00 theo giờ Việt Nam khi tab đang mở; nếu mở lại sau 18:00 sẽ kiểm tra và nhắc bù trong ngày. Nút gửi thử không phải chờ đến 18:00. Lịch Windows chạy lúc 18:00 theo múi giờ máy, nên đặt Windows về múi giờ Việt Nam nếu dùng lịch này. Sau khi cập nhật từ lịch 09:00 cũ, bấm lại **Nhắc cả khi đóng tab** để thay lịch thành 18:00. Khi đóng tab, lịch Windows vẫn có thể hiện cửa sổ nhắc riêng, không giả lập thông báo Chrome. Máy cần đang bật, bạn đã đăng nhập; Windows được cấu hình chạy bù khi bỏ lỡ lịch. Không nhắc khi máy tắt. Chrome/Windows có thể chặn thông báo nếu quyền bị tắt hoặc chế độ không làm phiền đang bật.
@@ -21,9 +21,13 @@ Giữ nguyên vị trí EXE. Nếu di chuyển EXE hoặc cập nhật từ bả
 
 Nút **Chế độ đêm / Chế độ ngày** ở góc trên bên phải chuyển giữa giao diện sáng và tối. Lựa chọn được lưu trong trình duyệt, giữ nguyên sau khi tải lại hoặc mở lại cùng địa chỉ. Dùng Chrome profile khác hoặc xóa dữ liệu trang sẽ đặt lại lựa chọn. Chữ, bảng và nút có cỡ lớn hơn và tương phản cao trong cả hai chế độ; không cần tải font từ Internet.
 
-## Nhận nhắc trên iPad bằng Lịch
+## Thử thông báo và hoàn tác
 
-Chọn **Lịch iPad** → **Tải lịch iPad** để xuất `.ics`, gửi file sang iPad qua tệp đính kèm Mail rồi nhập vào một lịch riêng. Lịch lặp hằng tháng và đặt cảnh báo trước 3 ngày lúc 18:00 giờ Việt Nam. Không tự đồng bộ với Windows; khi thay đổi danh sách, xóa lịch riêng đã nhập cũ và nhập lại bản mới. Chưa kiểm tra thông báo trên iPad thực tế. Xem [hướng dẫn chi tiết](docs/IPAD.md).
+- **Thử thông báo** gửi thông báo thật qua service worker của Chrome với tiêu đề **Sổ Gia Hạn · Thông báo thử**. Nội dung mẫu cho biết lịch nhắc 18:00, trước hạn 3 ngày. Nếu Chrome không hỗ trợ service worker sẽ dùng Notification API trực tiếp.
+- Nếu đã cho phép nhưng không thấy banner: kiểm tra trung tâm thông báo Windows (**Windows + N**), bật thông báo Google Chrome trong Windows và tắt Không làm phiền. App chỉ xác nhận đã gửi yêu cầu tới Chrome, không thể ép Windows hiển thị khi hệ thống chặn.
+- **Hoàn tác** cạnh **Sao lưu** khôi phục lần thêm, sửa, xóa, xác nhận gia hạn hoặc nhập Excel gần nhất. Có xác nhận trước khi thực hiện. Bấm tiếp để lùi nhiều bước, tối đa 20 thay đổi; lịch sử giữ trong SQLite khi đóng/mở app.
+- Nếu dữ liệu đã thay đổi ngoài lịch sử hoặc có thao tác mới từ tab khác, app yêu cầu tải lại để tránh hoàn tác đè lên dữ liệu mới. Hoàn tác không thu hồi một thông báo đã gửi hoặc một khoản đã thanh toán thực tế.
+- Nút **Lịch iPad** đã được bỏ khỏi giao diện theo yêu cầu. Bản này chỉ chạy trên Windows; không có đồng bộ HTTPS.
 
 ## Dữ liệu và quản lý tài khoản
 
@@ -49,7 +53,7 @@ python browser_app.py
 
 Kiểm tra trình duyệt: cài Playwright, chạy `python tests/browser_smoke.py` với Chrome đã cài; Linux có thể đặt `CHROME_PATH=/usr/bin/chromium`.
 
-GitHub Actions tự chạy khi push `main` hoặc workflow_dispatch: kiểm tra logic, Tk trên Windows, giao diện Chrome thực, đóng gói rồi kiểm tra HTTP của EXE trước khi upload artifact.
+GitHub Actions tự chạy khi push `main` hoặc workflow_dispatch: kiểm tra logic, Tk trên Windows, giao diện Chrome thực, thông báo đăng ký trong service worker, hoàn tác nhiều bước, đóng gói rồi kiểm tra HTTP của EXE trước khi upload artifact.
 
 Build trên Windows:
 
