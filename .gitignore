@@ -1,0 +1,10 @@
+data/
+__pycache__/
+*.pyc
+seed/
+build/
+dist/
+*.spec
+*.xlsx
+*.db
+*.zip
