@@ -23,7 +23,8 @@ def main():
     if process.poll() is not None:raise AssertionError('Packaged EXE exited before ready')
     time.sleep(.5)
    else:raise AssertionError('EXE did not become ready')
-   with opener.open(url) as r:assert 'Mọi tài khoản'.encode() in r.read()
+   with opener.open(url) as r:page=r.read()
+   assert b'id="theme-toggle"' in page and 'Sổ Gia Hạn'.encode() in page
    def post(path,data):
     request=urllib.request.Request(url+path,json.dumps(data).encode(),{'Content-Type':'application/json'})
     with opener.open(request) as r:return json.load(r)
