@@ -17,6 +17,10 @@ Giữ nguyên vị trí EXE. Nếu di chuyển EXE hoặc cập nhật từ bả
 
 Đóng tab không tắt tiến trình nền. Muốn thoát hoàn toàn, dùng Task Manager kết thúc `SoGiaHan.exe`. Khi thay phiên bản, đóng tiến trình cũ trước khi mở EXE mới. Máy chủ chỉ lắng nghe loopback cổng 8000, không triển khai lên Internet. Nếu cổng này đang được app khác dùng, hãy đóng ứng dụng đó trước.
 
+## Giao diện Ngày / Đêm
+
+Nút **Chế độ đêm / Chế độ ngày** ở góc trên bên phải chuyển giữa giao diện sáng và tối. Lựa chọn được lưu trong trình duyệt, giữ nguyên sau khi tải lại hoặc mở lại cùng địa chỉ. Dùng Chrome profile khác hoặc xóa dữ liệu trang sẽ đặt lại lựa chọn. Chữ, bảng và nút có cỡ lớn hơn và tương phản cao trong cả hai chế độ; không cần tải font từ Internet.
+
 ## Dữ liệu và quản lý tài khoản
 
 - SQLite tại `%LOCALAPPDATA%\SoGiaHan\accounts.db`, dùng chung với bản desktop cũ nên giữ được dữ liệu hiện có. Bản GitHub không kèm Gmail/Excel/DB cá nhân.

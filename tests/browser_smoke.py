@@ -49,7 +49,19 @@ def main():
     page.locator('#search').fill('test@example.com')
     expect(page.locator('#rows tr')).to_have_count(1)
     page.locator('#search').fill('')
-    if os.getenv('SCREENSHOT_OUT'):page.screenshot(path=os.environ['SCREENSHOT_OUT'],full_page=True)
+    if os.getenv('SCREENSHOT_OUT'):
+     page.locator('#toast').evaluate("e=>e.classList.add('hidden')")
+     page.screenshot(path=os.environ['SCREENSHOT_OUT'],full_page=True,animations='disabled')
+    page.locator('#theme-toggle').click()
+    expect(page.locator('html')).to_have_attribute('data-theme','dark')
+    if os.getenv('SCREENSHOT_OUT'):
+     output=Path(os.environ['SCREENSHOT_OUT'])
+     page.screenshot(path=str(output.with_stem(output.stem+'-dark')),full_page=True,animations='disabled')
+    page.reload()
+    expect(page.locator('html')).to_have_attribute('data-theme','dark')
+    expect(page.locator('#total')).to_have_text('2')
+    page.locator('#theme-toggle').click()
+    expect(page.locator('html')).to_have_attribute('data-theme','light')
     page.locator('#select-all').check();page.locator('#bulk-delete').click()
     expect(page.locator('#total')).to_have_text('0')
     # Verify layout remains usable on a narrow window.
@@ -58,7 +70,7 @@ def main():
     page.locator('#cancel').click()
     assert not errors,errors
     browser.close()
-    print('PASS: Chrome add, edit, renew, Excel import/dedup, search, bulk delete and mobile layout; no JS errors')
+    print('PASS: Chrome add, edit, renew, Excel import/dedup, search, bulk delete, persisted day/night themes and mobile layout; no JS errors')
   finally:
    server.shutdown();server.server_close();thread.join()
 if __name__=='__main__':main()
