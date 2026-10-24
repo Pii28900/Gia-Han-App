@@ -8,6 +8,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      PYTHONUTF8: '1' 
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -18,6 +20,7 @@ jobs:
         shell: python
         run: |
           import io, os, sys, unittest
+          sys.path.insert(0, os.getcwd())
           output = io.StringIO()
           suite = unittest.defaultTestLoader.discover('tests')
           result = unittest.TextTestRunner(stream=output, verbosity=2).run(suite)
