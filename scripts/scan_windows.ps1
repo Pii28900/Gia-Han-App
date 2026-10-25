@@ -49,7 +49,7 @@ try {
     if ($after -ne $report.sha256) { throw 'Executable changed during verification.' }
     $report.outcome = 'NoThreatsDetected'
     $report.message = 'Microsoft Defender reported no threats for this SHA-256 at the recorded scan time. This does not establish a Google Safe Browsing verdict.'
-    "$($report.sha256)  SoGiaHan.exe" | Set-Content -LiteralPath 'dist/SoGiaHan.exe.sha256' -Encoding ascii
+    "$($report.sha256)  SoGiaHan.exe" | Set-Content -LiteralPath 'security-report/SoGiaHan.exe.sha256' -Encoding ascii
 } catch {
     $report.outcome = 'BlockedOrUnverified'
     $report.message = $_.Exception.Message

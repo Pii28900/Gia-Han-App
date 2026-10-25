@@ -46,6 +46,14 @@ jobs:
         run: ./scripts/scan_windows.ps1
       - name: Test packaged EXE
         run: python tests/exe_smoke.py
+      - name: Prepare verified download
+        shell: pwsh
+        run: |
+          $report = Get-Content security-report/defender-report.json -Raw | ConvertFrom-Json
+          $actual = (Get-FileHash dist/SoGiaHan.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($report.outcome -ne 'NoThreatsDetected' -or $actual -ne $report.sha256) { throw 'Executable does not match the verified security report' }
+          New-Item -ItemType Directory -Path publish -Force | Out-Null
+          Copy-Item dist/SoGiaHan.exe,security-report/SoGiaHan.exe.sha256,security-report/defender-report.json -Destination publish/
       - name: Upload security report
         if: always()
         uses: actions/upload-artifact@v4
@@ -56,7 +64,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: SoGiaHan-Windows
-          path: |
-            dist/SoGiaHan.exe
-            dist/SoGiaHan.exe.sha256
-            security-report/defender-report.json
+          path: publish/
