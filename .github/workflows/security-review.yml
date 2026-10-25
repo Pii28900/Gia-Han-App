@@ -1,0 +1,39 @@
+name: Review downloaded Windows executable
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: GitHub Actions run containing the executable to inspect
+        required: true
+        default: '40154168865'
+  push:
+    paths:
+      - .github/workflows/security-review.yml
+      - scripts/scan_windows.ps1
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    runs-on: windows-latest
+    env:
+      SOURCE_RUN_ID: ${{ inputs.run_id || '40154168865' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the previously distributed executable without running it
+        uses: actions/download-artifact@v4
+        with:
+          name: SoGiaHan-Windows
+          path: previous-release
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Scan the original executable with Microsoft Defender
+        shell: pwsh
+        run: ./scripts/scan_windows.ps1 -Target previous-release/SoGiaHan.exe
+      - name: Publish original-file security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoGiaHan-original-file-security-report
+          path: security-report/
+          if-no-files-found: warn

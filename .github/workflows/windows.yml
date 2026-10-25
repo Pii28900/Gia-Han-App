@@ -15,6 +15,13 @@ jobs:
       PYTHONUTF8: '1' 
     steps:
       - uses: actions/checkout@v4
+      - name: Validate scanner script syntax
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path scripts/scan_windows.ps1).Path, [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -gt 0) { $parseErrors | Format-List; throw 'Scanner script syntax is invalid' }
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -34,9 +41,22 @@ jobs:
       - name: Test Chrome interface
         run: python tests/browser_smoke.py
       - run: pyinstaller --noconfirm --onefile --windowed --add-data "static;static" --name SoGiaHan browser_app.py
+      - name: Scan executable with Microsoft Defender
+        shell: pwsh
+        run: ./scripts/scan_windows.ps1
       - name: Test packaged EXE
         run: python tests/exe_smoke.py
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoGiaHan-security-report
+          path: security-report/
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: SoGiaHan-Windows
-          path: dist/SoGiaHan.exe
+          path: |
+            dist/SoGiaHan.exe
+            dist/SoGiaHan.exe.sha256
+            security-report/defender-report.json

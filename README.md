@@ -64,4 +64,6 @@ python -m pip install pyinstaller==6.16.0
 pyinstaller --noconfirm --onefile --windowed --add-data "static;static" --name SoGiaHan browser_app.py
 ```
 
+Xem [quy trình kiểm tra cảnh báo tải xuống](docs/SECURITY-CHECK.md). Workflow mới quét Defender trước khi chạy/phát hành EXE và xuất báo cáo SHA-256; nếu quét không xác minh được thì không xuất EXE. Đây không phải kết luận của Google Safe Browsing.
+
 EXE chưa ký số. Không đưa DB, Excel, thông tin riêng vào Git. Việc phân phối thông báo thật trên máy người dùng còn phụ thuộc quyền Chrome/Windows và trạng thái đăng nhập.
