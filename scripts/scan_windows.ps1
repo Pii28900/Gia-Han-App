@@ -56,6 +56,8 @@ try {
     throw
 } finally {
     $json = $report | ConvertTo-Json -Depth 4
+    $annotation = ($report | ConvertTo-Json -Depth 4 -Compress).Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+    Write-Output "::notice title=Executable security verification::$annotation"
     $json | Set-Content -LiteralPath 'security-report/defender-report.json' -Encoding utf8
     $summary = "## Windows executable security verification`n`n``````json`n$json`n```````n"
     $summary | Set-Content -LiteralPath 'security-report/summary.md' -Encoding utf8
