@@ -44,9 +44,9 @@ class ReminderListTests(unittest.TestCase):
   app.DB=Path(self.tmp.name)/'accounts.db'
  def tearDown(self):
   self.app.DB=self.old;self.tmp.cleanup()
- def add(self,email,days=3):
+ def add(self,email,days=3,app_name='ChatGPT'):
   with self.app.connect() as c:
-   self.app.insert(c,dict(email=email,due=(self.app.today()+d.timedelta(days=days)).isoformat(),app='Youtube',amount='165000'))
+   self.app.insert(c,dict(email=email,due=(self.app.today()+d.timedelta(days=days)).isoformat(),app=app_name,amount='165000'))
    return c.execute('SELECT last_insert_rowid()').fetchone()[0]
  def test_added_account_is_due_and_persists(self):
   key=self.add('new@example.com')
@@ -63,3 +63,15 @@ class ReminderListTests(unittest.TestCase):
   with self.app.connect() as c:
    self.assertEqual({r['id'] for r in c.execute('SELECT id FROM accounts')},{keep,future})
    self.assertEqual(c.execute('SELECT count(*) FROM notices').fetchone()[0],0)
+
+
+class YouTubeReminderTests(unittest.TestCase):
+ def test_name_variants_and_boundaries(self):
+  import app
+  day=d.date(2026,10,25)
+  for name in ('Youtube','YouTube Premium','YOUTUBE MUSIC',' You Tube '):
+   self.assertEqual(app.reminder_lead_days(name),0)
+   for offset,expected in [(4,False),(3,False),(1,False),(0,True),(-1,True)]:
+    self.assertEqual(app.is_reminder_due(dict(app=name,due=(day+d.timedelta(days=offset)).isoformat()),day),expected)
+  for offset,expected in [(4,False),(3,True),(1,True),(0,True),(-1,True)]:
+   self.assertEqual(app.is_reminder_due(dict(app='ChatGPT',due=(day+d.timedelta(days=offset)).isoformat()),day),expected)

@@ -25,7 +25,7 @@ def reminder():
     if not due: return
     root=tk.Tk(); root.withdraw()
     summary='\n'.join(f"{r['app']} · {r['email']} · {r['due']} · {int(r['amount']):,}đ" for r in due)
-    messagebox.showwarning('Nhắc gia hạn trước 3 ngày', summary + '\n\nMở Sổ Gia Hạn để kiểm tra và xác nhận đã gia hạn.', parent=root)
+    messagebox.showwarning('Nhắc gia hạn', summary + '\n\nMở Sổ Gia Hạn để kiểm tra và xác nhận đã gia hạn.', parent=root)
     root.destroy()
 
 def enable_schedule(entrypoint=None):
@@ -50,7 +50,7 @@ class Desktop:
     def __init__(self, root):
         self.root=root;root.title('Sổ Gia Hạn');root.geometry('1120x650')
         ttk.Label(root,text='Sổ Gia Hạn',font=('Segoe UI',24,'bold')).pack(anchor='w',padx=20,pady=12)
-        ttk.Label(root,text='Nhắc trước 3 ngày • Lưu trên máy • Số tiền VNĐ • Chu kỳ hàng tháng').pack(anchor='w',padx=20)
+        ttk.Label(root,text='YouTube: đúng ngày • App khác: trước 3 ngày • Lưu trên máy').pack(anchor='w',padx=20)
         bar=ttk.Frame(root);bar.pack(fill='x',padx=20,pady=15)
         for title,action in [('Thêm email cần nhắc',self.add),('Sửa',self.edit),('Nhập Excel',self.import_file),('Đã gia hạn',self.paid),('Xóa email đã chọn',self.delete),('Bật nhắc Windows',self.schedule),('Sao lưu',self.backup)]:
             ttk.Button(bar,text=title,command=lambda a=action:self.safe(a)).pack(side='left',padx=3)
@@ -79,7 +79,7 @@ class Desktop:
             due=dt.date.fromisoformat(r['due']);days=(due-app.today()).days;following=app.next_month(due,r['anchor'])
             while following<=app.today():following=app.next_month(following,r['anchor'])
             status=f'Quá hạn {-days} ngày' if days<0 else f'Còn {days} ngày'
-            self.table.insert('', 'end',iid=str(r['id']),values=(r['email'],r['app'],r['due'],following.isoformat(),f"{int(r['amount']):,}đ".replace(',','.'),r['device'],status),tags=('urgent',) if days<=3 else ())
+            self.table.insert('', 'end',iid=str(r['id']),values=(r['email'],r['app'],r['due'],following.isoformat(),f"{int(r['amount']):,}đ".replace(',','.'),r['device'],status),tags=('urgent',) if app.is_reminder_due(r) else ())
         retained = [key for key in selected if self.table.exists(key)]
         if retained: self.table.selection_set(retained)
     def tick(self):self.refresh();self.root.after(60000,self.tick)
@@ -105,7 +105,7 @@ class Desktop:
                     c.execute('UPDATE accounts SET email=?,app=?,due=?,amount=?,device=?,anchor=? WHERE id=?',(a['email'],a['app'],a['due'],amount,a['device'],anchor,record['id']))
                 else: app.insert(c,a)
             self.search.set('');win.destroy();self.refresh()
-            messagebox.showinfo('Đã lưu', 'Email đã được lưu vào danh sách nhắc trước hạn 3 ngày.', parent=self.root)
+            messagebox.showinfo('Đã lưu', 'Email đã được lưu: YouTube nhắc đúng ngày, app khác nhắc trước 3 ngày.', parent=self.root)
         ttk.Button(win,text='Lưu',command=lambda:self.safe(save)).pack(pady=15)
     def import_file(self):
         name=filedialog.askopenfilename(filetypes=[('Excel','*.xlsx')])

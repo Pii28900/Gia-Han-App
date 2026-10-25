@@ -80,10 +80,19 @@ def insert(c,a):
     if '@' not in a['email'] or not a.get('app','').strip(): raise ValueError('Cần Gmail và tên app hợp lệ')
     c.execute('INSERT INTO accounts(email,due,amount,app,device,anchor) VALUES(?,?,?,?,?,?)',(a['email'].strip(),due.isoformat(),to_vnd(a.get('amount','0')),a['app'],a.get('device',''),due.day))
 
+def reminder_lead_days(name):
+    # Existing Excel entries include Youtube; also accept YouTube Premium/Music.
+    normalized=''.join(str(name).casefold().split())
+    return 0 if normalized.startswith('youtube') else 3
+
+def is_reminder_due(account,on_date=None):
+    days=(dt.date.fromisoformat(account['due'])-(on_date or today())).days
+    return days<=reminder_lead_days(account['app'])
+
 def due_accounts():
     with connect() as c:
         return [dict(r) for r in c.execute('SELECT * FROM accounts ORDER BY due')
-                if (dt.date.fromisoformat(r['due'])-today()).days <= 3]
+                if is_reminder_due(r)]
 
 def delete_accounts(ids):
     ids = [(int(key),) for key in ids]
@@ -132,7 +141,7 @@ class Handler(BaseHTTPRequestHandler):
             for a in records:
                 due=dt.date.fromisoformat(a['due']); upcoming=next_month(due,a['anchor'])
                 while upcoming<=today(): upcoming=next_month(upcoming,a['anchor'])
-                a.update(days=(due-today()).days,next_due=upcoming.isoformat())
+                a.update(days=(due-today()).days,next_due=upcoming.isoformat(),reminder_days=reminder_lead_days(a['app']),remind=is_reminder_due(a))
             return self.send(200,dict(accounts=records,undo=undo,today=today().isoformat(),reminder_ready=dt.datetime.now(TZ).hour>=18))
         if self.path!='/': return self.send(404,{'error':'Không tìm thấy'})
         data=(ROOT/'static/index.html').read_bytes()

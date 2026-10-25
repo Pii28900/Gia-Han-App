@@ -80,3 +80,16 @@ class HTTPTests(unittest.TestCase):
   for n in range(20):
    state=self.get('/api/accounts');self.post('/api/undo',{'id':state['undo']['id']})
   state=self.get('/api/accounts');self.assertIsNone(state['undo']);self.assertEqual(len(state['accounts']),3)
+ def test_youtube_waits_for_due_date_in_browser_and_windows(self):
+  import datetime
+  tomorrow=(app.today()+datetime.timedelta(days=1)).isoformat()
+  in_three=(app.today()+datetime.timedelta(days=3)).isoformat()
+  self.post('/api/add',dict(email='youtube@example.com',app='YouTube Premium',due=tomorrow,amount='165000'))
+  self.post('/api/add',dict(email='other@example.com',app='ChatGPT',due=in_three,amount='500000'))
+  rows=self.get('/api/accounts')['accounts'];youtube=next(a for a in rows if a['app']=='YouTube Premium')
+  self.assertFalse(youtube['remind']);self.assertEqual(youtube['reminder_days'],0)
+  self.assertEqual([a['app'] for a in app.due_accounts()],['ChatGPT'])
+  self.post('/api/edit',dict(youtube,due=app.today().isoformat()))
+  rows=self.get('/api/accounts')['accounts'];youtube=next(a for a in rows if a['app']=='YouTube Premium')
+  self.assertTrue(youtube['remind'])
+  self.assertEqual({a['app'] for a in app.due_accounts()},{'ChatGPT','YouTube Premium'})

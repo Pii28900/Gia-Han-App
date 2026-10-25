@@ -11,6 +11,8 @@ Giao diện quản lý gia hạn tiếng Việt, mở trong tab Chrome. Dữ li�
 5. Bấm **Thử thông báo**, chọn **Cho phép** trong Chrome. App sẽ tạo thông báo thử ngay, không phải chờ 18:00.
 6. Bấm **Nhắc cả khi đóng tab** để đăng ký lịch Windows lúc 18:00 mỗi ngày.
 
+YouTube (bao gồm tên Youtube, YouTube Premium/Music) chỉ bắt đầu nhắc đúng ngày gia hạn; các ứng dụng khác vẫn bắt đầu trước 3 ngày. Quá hạn chưa xác nhận vẫn được nhắc. Quy tắc áp dụng tự động cho dữ liệu hiện có, cả thông báo Chrome lẫn cửa sổ nhắc Windows.
+
 Thông báo Chrome tự động chỉ phát từ 18:00 theo giờ Việt Nam khi tab đang mở; nếu mở lại sau 18:00 sẽ kiểm tra và nhắc bù trong ngày. Nút gửi thử không phải chờ đến 18:00. Lịch Windows chạy lúc 18:00 theo múi giờ máy, nên đặt Windows về múi giờ Việt Nam nếu dùng lịch này. Sau khi cập nhật từ lịch 09:00 cũ, bấm lại **Nhắc cả khi đóng tab** để thay lịch thành 18:00. Khi đóng tab, lịch Windows vẫn có thể hiện cửa sổ nhắc riêng, không giả lập thông báo Chrome. Máy cần đang bật, bạn đã đăng nhập; Windows được cấu hình chạy bù khi bỏ lỡ lịch. Không nhắc khi máy tắt. Chrome/Windows có thể chặn thông báo nếu quyền bị tắt hoặc chế độ không làm phiền đang bật.
 
 Giữ nguyên vị trí EXE. Nếu di chuyển EXE hoặc cập nhật từ bản cũ, mở bản mới rồi bấm lại **Nhắc cả khi đóng tab** để cập nhật đường dẫn tác vụ. Tắt lịch: xóa `SoGiaHanReminder` trong Task Scheduler.
@@ -23,7 +25,7 @@ Nút **Chế độ đêm / Chế độ ngày** ở góc trên bên phải chuy�
 
 ## Thử thông báo và hoàn tác
 
-- **Thử thông báo** gửi thông báo thật qua service worker của Chrome với tiêu đề **Sổ Gia Hạn · Thông báo thử**. Nội dung mẫu cho biết lịch nhắc 18:00, trước hạn 3 ngày. Nếu Chrome không hỗ trợ service worker sẽ dùng Notification API trực tiếp.
+- **Thử thông báo** gửi thông báo thật qua service worker của Chrome với tiêu đề **Sổ Gia Hạn · Thông báo thử**. Nội dung mẫu cho biết lịch nhắc 18:00: YouTube đúng ngày, các app khác trước 3 ngày. Nếu Chrome không hỗ trợ service worker sẽ dùng Notification API trực tiếp.
 - Nếu đã cho phép nhưng không thấy banner: kiểm tra trung tâm thông báo Windows (**Windows + N**), bật thông báo Google Chrome trong Windows và tắt Không làm phiền. App chỉ xác nhận đã gửi yêu cầu tới Chrome, không thể ép Windows hiển thị khi hệ thống chặn.
 - **Hoàn tác** cạnh **Sao lưu** khôi phục lần thêm, sửa, xóa, xác nhận gia hạn hoặc nhập Excel gần nhất. Có xác nhận trước khi thực hiện. Bấm tiếp để lùi nhiều bước, tối đa 20 thay đổi; lịch sử giữ trong SQLite khi đóng/mở app.
 - Nếu dữ liệu đã thay đổi ngoài lịch sử hoặc có thao tác mới từ tab khác, app yêu cầu tải lại để tránh hoàn tác đè lên dữ liệu mới. Hoàn tác không thu hồi một thông báo đã gửi hoặc một khoản đã thanh toán thực tế.
