@@ -41,7 +41,7 @@ async function showLocalTestNotification(){
  const permission=await Notification.requestPermission();updateNotificationStatus();
  if(permission!=='granted')throw Error('Thông báo đang bị chặn. Bấm biểu tượng cạnh địa chỉ trang → Cài đặt trang web → Thông báo → Cho phép.');
  const title='Sổ Gia Hạn · Thông báo thử';
- const options={body:'Đây là thông báo thử lúc 18:00: YouTube nhắc đúng ngày, ứng dụng khác trước 3 ngày.',tag:'sgh-test',icon:'/icons/icon-192.png',requireInteraction:true};
+ const options={body:'Đây là thông báo thử. Lịch nhắc tự động lúc 18:00: YouTube đúng ngày, ứng dụng khác trước 3 ngày.',tag:'sgh-test',icon:'/icons/icon-192.png',requireInteraction:true};
  if('serviceWorker'in navigator){
   await navigator.serviceWorker.register('/sw.js');const registration=await navigator.serviceWorker.ready;
   await registration.showNotification(title,options);
